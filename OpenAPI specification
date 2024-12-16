@@ -1,0 +1,192 @@
+openapi: 3.0.3
+info:
+  title: Library Management API
+  version: 1.4.0  
+  description: API for managing books, authors, visitors, and groups in a library.
+servers:
+  - url: http://localhost:8080/api
+
+components:
+  schemas:
+    Group:
+      type: object
+      properties:
+        id:
+          type: string
+        groupName:
+          type: string
+        groupYear:
+          type: string
+        promotion:
+          type: string
+          enum: [G, H, J, K]
+        students:
+          type: array
+          items:
+            $ref: /components/schemas/Student
+
+    Student:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        sex:
+          type: string
+          enum: [M, F]
+        birthdate:
+          type: string
+          format: date
+        reference:
+          type: string
+        group:
+          $ref: /components/schemas/Group
+
+    CreateStudent:
+      allOf:
+        - $ref: /components/schemas/Student
+        - required:
+            - name
+            - sex
+
+    CreateGroup:
+      allOf:
+        - $ref: /components/schemas/Group
+        - required:
+            - groupName
+            - groupYear
+
+  parameters:
+    queryPagination:
+      name: page
+      in: query
+      description: The page number to retrieve 
+      required: false
+      schema:
+        type: integer
+        default: 1
+
+    pathPagination:
+      name: pageSize
+      in: query
+      description: The number of items per page 
+      required: false
+      schema:
+        type: integer
+        default: 50
+
+    statusResponse:
+      type: object
+      properties:
+        status:
+          type: object
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
+        body:
+          type: object
+
+    errorResponse:
+      allOf:
+        - $ref: /components/schemas/statusResponse
+        - properties:
+            body:
+              type: object
+              additionalProperties: true
+
+    successResponse200:
+      allOf:
+        - $ref: /components/schemas/statusResponse
+        - properties:
+            body:
+              type: object
+              additionalProperties: true
+
+    visitorIdParam:
+      name: visitorId
+      in: path
+      required: true
+      description: ID of the visitor.
+      schema:
+        type: string
+
+    bookIdParam:
+      name: bookId
+      in: path
+      required: true
+      description: ID of the book.
+      schema:
+        type: string
+
+    borrowBookRequestBody:
+      type: object
+      properties:
+        visitorId:
+          type: string 
+        bookId:
+          type: string 
+
+paths:
+
+  /students:
+    post:
+      summary: Create a new student with associated group information
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: /components/schemas/CreateStudent
+      responses:
+        '201':
+          description: Student created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: /components/schemas/Student
+
+  /students/{studentId}/group:
+    put:
+      summary: Update the group of a specific student by ID
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          description: ID of the student to update.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: /components/schemas/Group
+        '200':
+          description: Student's group updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: /components/schemas/Student
+
+  /students/group:
+    put:
+      summary: Update multiple students' groups at once
+      requestBody:
+        required: true
+        content:
+          application/json:
+            type : array 
+            items :
+              type : object 
+              properties :
+                studentId :
+                  type : string 
+                group :
+                  $ref : /components/schemas/Group
+      responses :
+        '200':
+          description : List of students' groups updated successfully.
+
